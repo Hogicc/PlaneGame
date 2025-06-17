@@ -7,7 +7,7 @@
       display: block;
       margin: 0 auto;
       background: skyblue;
-      image-rendering: pixelated; /* Ovo pomaže da slike ostanu "oštre" kao pikseli */
+      image-rendering: pixelated;
     }
   </style>
 </head>
@@ -21,23 +21,30 @@
     const buildingImg = new Image();
     const lightningImg = new Image();
 
-    // Ove slike MORAŠ imati u folderu, i neka budu pixel art PNG fajlovi
-    planeImg.src = 'plane.png';        // npr. mali avion u pixel-art stilu
-    buildingImg.src = 'skyscraper.png';// pixel-art zgrada
-    lightningImg.src = 'lightning.png';// pixel-art munja
+    planeImg.src = 'plane.png';
+    buildingImg.src = 'skyscraper.png';
+    lightningImg.src = 'lightning.png';
 
-    let plane = { x: 50, y: 150, width: 40, height: 30, velocity: 0 };
+    let plane = { x: 50, y: 200, width: 40, height: 30, velocity: 0 };
     let gravity = 0.5;
     let obstacles = [];
     let score = 0;
     let gameOver = false;
 
-    document.addEventListener('keydown', () => { plane.velocity = -8; });
-    document.addEventListener('mousedown', () => { plane.velocity = -8; });
-    canvas.addEventListener('touchstart', () => { plane.velocity = -8; });
+    document.addEventListener('keydown', jump);
+    document.addEventListener('mousedown', jump);
+    canvas.addEventListener('touchstart', jump);
+
+    function jump() {
+      if (!gameOver) {
+        plane.velocity = -8;
+      } else {
+        resetGame();
+      }
+    }
 
     function spawnObstacle() {
-      let gap = 150;
+      let gap = 180;
       let topHeight = Math.floor(Math.random() * 200) + 50;
       let bottomY = topHeight + gap;
 
@@ -89,24 +96,29 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Avion (piksel-art)
       ctx.drawImage(planeImg, plane.x, plane.y, plane.width, plane.height);
 
-      // Prepreke (piksel-art munja i zgrada)
       for (let obs of obstacles) {
         ctx.drawImage(lightningImg, obs.x, 0, obs.width, obs.topHeight);
         ctx.drawImage(buildingImg, obs.x, obs.bottomY, obs.width, canvas.height - obs.bottomY);
       }
 
-      // Poeni
       ctx.fillStyle = "black";
       ctx.font = "24px Arial";
       ctx.fillText("Score: " + score, 10, 30);
 
       if (gameOver) {
-        ctx.fillText("Game Over!", 180, 320);
+        ctx.fillText("Game Over!", 170, 320);
+        ctx.fillText("Click or press key to restart", 90, 360);
       }
+    }
+
+    function resetGame() {
+      plane.y = 200;
+      plane.velocity = 0;
+      obstacles = [];
+      score = 0;
+      gameOver = false;
     }
 
     function loop() {
