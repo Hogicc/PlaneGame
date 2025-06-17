@@ -1,57 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sr">
 <head>
   <meta charset="UTF-8" />
-  <title>Piksel avion 16x16</title>
+  <title>PlaneGame</title>
   <style>
-    canvas {
-      background: #222;
-      image-rendering: pixelated; /* Da se očuva oštrina piksela */
+    body {
+      margin: 0; background: #87ceeb; overflow: hidden;
+      display: flex; justify-content: center; align-items: center; height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+    #gameCanvas {
+      background: #87ceeb;
+      display: block;
+      border: 2px solid #000;
+    }
+    #score {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #000;
+      user-select: none;
     }
   </style>
 </head>
 <body>
-  <canvas id="planeCanvas" width="320" height="320"></canvas>
+  <div id="score">Rekord: 0</div>
+  <canvas id="gameCanvas" width="480" height="640"></canvas>
 
   <script>
-    const canvas = document.getElementById('planeCanvas');
+    const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    const pixelSize = 20;
+    // Igrači avion
+    const plane = {
+      x: 80,
+      y: canvas.height / 2,
+      width: 50,
+      height: 35,
+      velocity: 0,
+      gravity: 0.6,
+      lift: -10
+    };
 
-    // Definiši avion kao 16x16 matrica
-    // 1 = crveni piksel, 0 = transparentno
-    const planePixels = [
-      [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-      [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-      [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-      [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
-      [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-      [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-      [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-      [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
-      [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-      [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-      [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    ];
+    // Prepreke: zgrade i gromovi
+    const buildings = [];
+    const lightning = [];
+    const obstacleWidth = 60;
+    const gapHeight = 160;
+    let frameCount = 0;
+    let score = 0;
+    let highScore = localStorage.getItem('planeHighScore') || 0;
 
-    // Iscrtavanje piksela
-    for(let y = 0; y < 16; y++) {
-      for(let x = 0; x < 16; x++) {
-        if (planePixels[y][x] === 1) {
-          ctx.fillStyle = 'red';
-          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+    const scoreDiv = document.getElementById('score');
+    scoreDiv.textContent = `Rekord: ${highScore}`;
+
+    let gameOver = false;
+
+    // Event za skok aviona
+    window.addEventListener('click', () => {
+      if (gameOver) {
+        resetGame();
+      } else {
+        plane.velocity = plane.lift;
+      }
+    });
+
+    function resetGame() {
+      plane.y = canvas.height / 2;
+      plane.velocity = 0;
+      buildings.length = 0;
+      lightning.length = 0;
+      frameCount = 0;
+      score = 0;
+      gameOver = false;
+    }
+
+    function createObstacles() {
+      if (frameCount % 90 === 0) {
+        // Nasumična visina otvora između zgrada i gromova
+        const topHeight = Math.floor(Math.random() * (canvas.height - gapHeight - 100)) + 50;
+        buildings.push({ x: canvas.width, y: canvas.height - topHeight, width: obstacleWidth, height: topHeight });
+        lightning.push({ x: canvas.width, y: 0, width: obstacleWidth, height: canvas.height - topHeight - gapHeight });
+      }
+    }
+
+    function updateObstacles() {
+      for (let i = 0; i < buildings.length; i++) {
+        buildings[i].x -= 3;
+        lightning[i].x -= 3;
+      }
+
+      if (buildings.length && buildings[0].x + obstacleWidth < 0) {
+        buildings.shift();
+        lightning.shift();
+        score++;
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('planeHighScore', highScore);
+          scoreDiv.textContent = `Rekord: ${highScore}`;
         }
       }
     }
+
+    function drawPlane() {
+      ctx.fillStyle = '#FF0000';
+      ctx.fillRect(plane.x, plane.y, plane.width, plane.height);
+      // Možeš kasnije zameniti crveni pravougaonik slikom aviona
+    }
+
+    function drawBuildings() {
+      ctx.fillStyle = '#654321';
+      buildings.forEach(b => {
+        ctx.fillRect(b.x, b.y, b.width, b.height);
+      });
+    }
+
+    function drawLightning() {
+      ctx.fillStyle = '#FFFF00';
+      lightning.forEach(l => {
+        ctx.fillRect(l.x, l.y, l.width, l.height);
+      });
+    }
+
+    function checkCollision() {
+      for (let i = 0; i < buildings.length; i++) {
+        // Provera sudara sa zgradama (donje prepreke)
+        if (
+          plane.x < buildings[i].x + buildings[i].width &&
+          plane.x + plane.width > buildings[i].x &&
+          plane.y + plane.height > buildings[i].y
+        ) {
+          gameOver = true;
+        }
+        // Provera sudara sa gromovima (gornje prepreke)
+        if (
+          plane.x < lightning[i].x + lightning[i].width &&
+          plane.x + plane.width > lightning[i].x &&
+          plane.y < lightning[i].height
+        ) {
+          gameOver = true;
+        }
+      }
+      // Provera da avion ne izađe iz ekrana
+      if (plane.y < 0 || plane.y + plane.height > canvas.height) {
+        gameOver = true;
+      }
+    }
+
+    function updatePlane() {
+      plane.velocity += plane.gravity;
+      plane.y += plane.velocity;
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!gameOver) {
+        frameCount++;
+        createObstacles();
+        updateObstacles();
+        updatePlane();
+        checkCollision();
+      } else {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '36px Arial';
+        ctx.fillText('Kraj igre! Klikni za restart', 40, canvas.height / 2);
+      }
+
+      drawBuildings();
+      drawLightning();
+      drawPlane();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
   </script>
 </body>
 </html>
-
  
          
