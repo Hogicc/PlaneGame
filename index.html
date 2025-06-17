@@ -7,6 +7,7 @@
       display: block;
       margin: 0 auto;
       background: skyblue;
+      image-rendering: pixelated; /* Ovo pomaže da slike ostanu "oštre" kao pikseli */
     }
   </style>
 </head>
@@ -20,9 +21,10 @@
     const buildingImg = new Image();
     const lightningImg = new Image();
 
-    planeImg.src = 'plane.png';
-    buildingImg.src = 'skyscraper.png';
-    lightningImg.src = 'lightning.png';
+    // Ove slike MORAŠ imati u folderu, i neka budu pixel art PNG fajlovi
+    planeImg.src = 'plane.png';        // npr. mali avion u pixel-art stilu
+    buildingImg.src = 'skyscraper.png';// pixel-art zgrada
+    lightningImg.src = 'lightning.png';// pixel-art munja
 
     let plane = { x: 50, y: 150, width: 40, height: 30, velocity: 0 };
     let gravity = 0.5;
@@ -61,7 +63,6 @@
       for (let obs of obstacles) {
         obs.x -= 2;
 
-        // Sudari
         if (
           plane.x < obs.x + obs.width &&
           plane.x + plane.width > obs.x &&
@@ -73,7 +74,6 @@
           gameOver = true;
         }
 
-        // Brojanje poena
         if (!obs.passed && obs.x + obs.width < plane.x) {
           score++;
           obs.passed = true;
@@ -90,16 +90,16 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Avion
+      // Avion (piksel-art)
       ctx.drawImage(planeImg, plane.x, plane.y, plane.width, plane.height);
 
-      // Prepreke
+      // Prepreke (piksel-art munja i zgrada)
       for (let obs of obstacles) {
         ctx.drawImage(lightningImg, obs.x, 0, obs.width, obs.topHeight);
         ctx.drawImage(buildingImg, obs.x, obs.bottomY, obs.width, canvas.height - obs.bottomY);
       }
 
-      // Rezultat
+      // Poeni
       ctx.fillStyle = "black";
       ctx.font = "24px Arial";
       ctx.fillText("Score: " + score, 10, 30);
